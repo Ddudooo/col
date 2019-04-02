@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+        PUBLIC "-//maybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+        
+        
+<mapper namespace="com.col.channel.dao.ChannelDao">
+   <select id="selectChnlInfo" parameterType="String" resultType="HashMap">
+      SELECT *
+      FROM channel
+      WHERE userID=#{userID}
+   </select>
+   
+   <select id="selectChnlList" parameterType="map" resultType="com.col.channel.dao.ChannelVO">
+      SELECT *
+      FROM channel
+      <trim prefix="WHERE" prefixOverrides="AND">
+            <if test="channelCate !=0">
+                AND channelCate = #{channelCate}
+            </if>
+               
+               
+        </trim>
+
+   </select>
+   
+   
+   <select id="selectVideoDetails" parameterType="HashMap" resultType="com.col.channel.dao.VideoVO">
+   		SELECT *
+   		FROM video
+   		WHERE 1=1
+   		AND videoNum=#{videoNum}
+   		AND userID=#{userID}
+   </select>
+   
+   
+   <select id="selectChnlListAll" resultType="com.col.channel.dao.ChannelVO">
+      SELECT *
+      FROM channel
+   </select>
+   
+   <select id="existFollow" parameterType="HashMap" resultType="int">
+   		SELECT COUNT(*)
+   		FROM follow
+   		WHERE 1=1
+   		AND followUser=#{followUser}
+   		AND followChannel=#{followChannel}
+   </select>
+   
+   <select id="selectMyFollower" parameterType="String" resultType="com.col.channel.dao.FollowVO">
+		SELECT
+			A.followChannel, 
+			B.userID as myFollowerID, 
+			B.userNick as myFollowerNick, 
+	    	B.userImg as myFollowerImg
+		FROM follow A INNER JOIN user B ON A.followUser = B.userID
+		WHERE 1=1
+		AND A.followChannel = #{followChannel}
+	</select>
+	
+	
+	<select id="selectMyFollowing" parameterType="String" resultType="com.col.channel.dao.FollowVO">
+		SELECT
+			A.followUser,
+			B.userID as myFollowingID,
+			B.userNick as myFollowingNick,
+			B.userImg as myFollowingImg
+		FROM follow A INNER JOIN user B ON A.followChannel = B.userID 
+		WHERE 1=1
+		AND A.followUser= #{followUser}
+	</select>
+	
+	<select id="selectCntFollower" parameterType="String" resultType="int">
+		SELECT (CASE WHEN COUNT(*) = 0 THEN 0 ELSE COUNT(*) END) as myFollowerCnt
+		FROM follow A INNER JOIN user B ON A.followUser = B.userID
+		WHERE 1=1
+		AND A.followChannel = #{followChannel}
+			
+	</select>
+	
+	<select id="selectCntFollowing" parameterType="String" resultType="int">
+		SELECT (CASE WHEN COUNT(*) = 0 THEN 0 ELSE COUNT(*) END) as myFollowingCnt
+		FROM follow A INNER JOIN user B ON A.followChannel = B.userID
+		WHERE 1=1
+		AND A.followUser= #{followUser}
+		    
+	</select>
+	
+   
+   <insert id="insertFollow" parameterType="HashMap">
+   		INSERT INTO follow
+   		(
+   			followUser,
+   			followChannel
+   		)
+   		VALUES
+   		(
+   			#{followUser},
+   			#{followChannel}
+   			
+   		)
+   </insert>
+   
+   <insert id="insertChnl" parameterType="String" >
+      INSERT INTO channel
+      (
+         userID,
+         channelTitle,
+         channelCate,
+         channelNotice,
+         channelLevel,
+         channelImg
+      
+      )
+      VALUES
+      (
+         #{userID},
+         ' ',
+         0 ,
+         ' ',
+         0 ,
+         ' '
+   
+      )
+   </insert>
+   
+   <delete id="deleteFollow" parameterType="HashMap">
+   		DELETE FROM follow
+   		WHERE followUser=#{followUser}
+   		AND followChannel=#{followChannel}
+   </delete>
+
+</mapper>

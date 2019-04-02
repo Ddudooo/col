@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.col.test.dao.TestDao">
+<select id = "testList" parameterType="int" resultType = "com.col.test.service.TestVO">
+		SELECT *
+			<!--  testNum,
+			testCate,
+			testTitle,
+			testContent,
+			testLevel,
+			testPoint,
+			testCnt,
+			testAcnt,
+			testPer,
+			testHit-->
+			
+		FROM
+			test
+			
+		ORDER BY
+			testNum desc
+			LIMIT #{page},10
+		
+	</select>
+	<select id="testListMaxPage" resultType="int">
+		SELECT CEILING(COUNT(*)/10)
+		FROM test
+	</select>
+	<select id="selectTest" parameterType="int" resultType="com.col.test.service.TestVO">
+		SELECT *
+		FROM test
+		WHERE
+			testNum = #{testNum}
+	</select>
+	<select id="selectTestAnswerCnt" parameterType="com.col.test.service.TestSubVO" resultType="int">
+		SELECT COUNT(*)
+		FROM testSubmit
+		<trim prefix="WHERE" prefixOverrides="AND |OR ">
+			<if test="userID != null">
+				 AND userID = #{userID}
+			</if>
+			<if test="testNum != null">
+				AND testNum = #{testNum}
+			</if>
+		</trim>
+	</select>
+	<select id="selectUserGrade" parameterType="String" resultType="int">
+		SELECT userGrade
+		FROM user
+		WHERE userID = #{userID}
+	</select>
+	<!-- 게시글 작성 -->
+	<insert id = "insertTest">
+		INSERT INTO test (
+			testNum,
+			testCate,
+			testTitle,
+			testContent,
+			testLevel,
+			testAnswer,
+			testPoint,
+		    testUploadID,
+		    testInput
+		)
+		
+		VALUES (
+			default,
+			#{testCate},
+			#{testTitle},
+			#{testContent},
+			#{testLevel},
+			#{testAnswer},
+			#{testPoint},
+		    #{testUploadID}
+			<if test="testInput != null">
+				,#{testInput}
+			</if>
+			<if test="testInput == null">
+				, '0';
+			</if>
+		)
+	</insert>
+	<!--답안 작성-->
+	<insert id="insertTestAnswer" parameterType="com.col.test.service.TestSubVO">
+		INSERT INTO testSubmit (
+			userID
+			,testNum
+			,subAnswer
+			<trim suffixOverrides=",">
+				<if test="subResult != null">
+					,subResult
+				</if>
+				<if test="subCnt != null">
+					,subCnt
+				</if>
+				<if test="subLang !=null">
+					,subLang
+				</if>
+				<if test="subTime !=null">
+					,subTime
+				</if>
+			</trim>
+		) VALUES (
+			#{userID}
+			,#{testNum}
+			,#{subAnswer}
+		<trim suffixOverrides=",">
+			<if test="subResult != null">
+				,#{subResult}
+			</if>
+			<if test="subCnt != null">
+				,#{subCnt}
+			</if>
+			<if test="subLang != null">
+				,#{subLang}
+			</if>
+			<if test="subTime !=null">
+				,#{subTime}
+			</if>
+		</trim>
+		)
+	</insert>
+	<!--조회수 증가-->
+	<update id="viewIncrement" parameterType="int">
+		UPDATE test SET
+			testHit = testHit+1
+		WHERE testNum = #{testNum}
+	</update>
+	<update id="testSurveyUpdate" parameterType="Map">
+		UPDATE user SET
+			userGrade = #{userGrade},
+			userGradePoint = #{userGradePoint}
+		WHERE userID = #{userID}
+	</update>
+
+</mapper>

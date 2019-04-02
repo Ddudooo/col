@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:mvc="http://www.springframework.org/schema/mvc"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:mybatis="http://mybatis.org/schema/mybatis-spring"
+       xmlns:websocket="http://www.springframework.org/schema/websocket"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+       http://www.springframework.org/schema/beans/spring-beans.xsd
+       http://www.springframework.org/schema/mvc
+       http://www.springframework.org/schema/mvc/spring-mvc.xsd
+       http://www.springframework.org/schema/context
+       http://www.springframework.org/schema/context/spring-context.xsd
+       http://www.springframework.org/schema/tx
+       http://www.springframework.org/schema/tx/spring-tx.xsd
+       http://mybatis.org/schema/mybatis-spring
+       http://mybatis.org/schema/mybatis-spring.xsd http://www.springframework.org/schema/websocket http://www.springframework.org/schema/websocket/spring-websocket.xsd">
+
+	<context:component-scan base-package="com.col" />
+	
+	<!-- Root Context: defines shared resources visible to all other web components -->
+    <tx:annotation-driven />
+    <tx:annotation-driven transaction-manager="transactionManager" />
+    <mvc:annotation-driven/>
+    <mvc:resources mapping="/resources/**" location="/resources/" />
+    <bean class="org.springframework.dao.annotation.PersistenceExceptionTranslationPostProcessor" />
+    <bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+        <property name="dataSource" ref="dataSource"/>
+    </bean>
+    <bean class="org.springframework.dao.annotation.PersistenceExceptionTranslationPostProcessor"/>
+
+    <bean id="dataSourceSpied" class="com.mchange.v2.c3p0.ComboPooledDataSource" destroy-method="close">
+        <property name="driverClass" value="com.mysql.cj.jdbc.Driver" />
+        <property name="jdbcUrl" value="jdbc:mysql://jungdoo.asuscomm.com:3306/COL?userUnicode=true&amp;serverTimezone=UTC"/>
+        <property name="user" value="root"/>
+        <property name="password" value="1234"/>
+    </bean>
+
+    <bean id="dataSource" class="net.sf.log4jdbc.Log4jdbcProxyDataSource">
+        <constructor-arg ref="dataSourceSpied" />
+        <property name="logFormatter">
+            <bean class="net.sf.log4jdbc.tools.Log4JdbcCustomFormatter">
+                <property name="loggingType" value="MULTI_LINE" />
+                <property name="sqlPrefix" value="SQL         :  " />
+            </bean>
+        </property>
+    </bean>
+
+    <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+        <property name="dataSource" ref="dataSource"/>
+        <property name="mapperLocations">
+            <list>
+                <value>/mybatis/**.xml</value>
+            </list>
+        </property>
+    </bean>
+    <bean id="sqlSession" class="org.mybatis.spring.SqlSessionTemplate">
+        <constructor-arg index="0" ref="sqlSessionFactory" />
+    </bean>
+    <!-- db설정 -->
+    <!-- google Class Bean설정 추가 -->
+    <!-- 클라이언트ID와 보안비밀 세팅 -->
+    <bean id="googleConnectionFactory"
+          class="org.springframework.social.google.connect.GoogleConnectionFactory">
+        <constructor-arg
+                value="719935708388-oaevsdqu4ij45e38gekfhq7ne7sau925.apps.googleusercontent.com" />
+        <constructor-arg value="6stSL9_-0bdb8vAHKFfZWiL4" />
+    </bean>
+    <!-- 승인된 자바스크립트 원본과 승인된 리디렉션 URI -->
+    <bean id="googleOAuth2Parameters"
+          class="org.springframework.social.oauth2.OAuth2Parameters">
+        <property name="scope"
+                  value="https://www.googleapis.com/auth/plus.login https://www.googleapis.com/auth/userinfo.email" />
+        <property name="redirectUri"
+                  value="http://localhost:8080/col/login/google" />
+    </bean>
+    
+  <!--웹소캣-->
+    <!-- 웹소켓 사용 -->
+
+    <websocket:handlers>
+
+        <websocket:mapping path="/count" handler="myHandler"/>
+        <websocket:handshake-interceptors>
+            <bean class="org.springframework.web.socket.server.support.HttpSessionHandshakeInterceptor"/>
+        </websocket:handshake-interceptors>
+    </websocket:handlers>
+    <!-- 웹 소켓 핸들러  -->
+    <bean id="myHandler" class="com.col.message.EchoHandler"/>
+    
+    <!--naver-->
+    <bean id="naverLoginBO" class="com.col.login.naver.NaverLoginBO"/>
+    <!--OAuth Login-->
+    
+    <!-- 메일발송 -->
+	<bean id="mailSender" class = "org.springframework.mail.javamail.JavaMailSenderImpl">
+	   <property name="host" value="smtp.gmail.com" />
+	   <property name="port" value="587" />
+	   <property name="username" value="eunuchS2prince@gmail.com" />
+	   <property name="password" value="col12345!" />
+	   <property name="javaMailProperties">
+	      <props>
+	            <prop key="mail.transport.protocol">smtp</prop>
+	            <prop key="mail.smtp.auth">true</prop>
+	            <prop key="mail.smtp.starttls.enable">true</prop>
+	            <prop key="mail.debug">true</prop>
+	      </props>
+	   </property>
+	
+	</bean>
+	
+</beans>

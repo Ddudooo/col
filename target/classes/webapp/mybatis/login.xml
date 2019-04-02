@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE mapper
+        PUBLIC "-//maybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.col.login.dao.LoginDao">
+    <select id="login" parameterType="com.col.register.service.UserVO" resultType="int">
+        SELECT COUNT(*)
+        FROM user
+        <trim prefix="WHERE" prefixOverrides="AND">
+            <if test="userID !=null">
+                AND userID = #{userID}
+            </if>
+            <if test="userPW != null">
+                AND userPW = #{userPW}
+            </if>
+            <if test="userStat!=null">
+          		AND userStat = #{userStat}
+            </if>	
+            	
+        </trim>
+    </select>
+    <select id="findID" parameterType="com.col.register.service.UserVO" resultType="String">
+    	SELECT userID FROM user WHERE userName = #{userName} AND userEmail = #{userEmail}
+    	<!-- SELECT userID
+        FROM user
+        <trim prefix="WHERE" prefixOverrides="AND">
+            <if test="userName != null">
+                AND userName = #{userName}
+            </if>
+            <if test="userEmail != null">
+                AND userEmail = #{userEmail}
+            </if>
+            	
+        </trim> -->
+    </select>
+    <select id="findPW" parameterType="com.col.register.service.UserVO" resultType="String">
+    	SELECT userEmail FROM user WHERE userID = #{userID} AND userEmail = #{userEmail}
+    </select>
+    
+    <update id="updatePW" parameterType="com.col.register.service.UserVO" >
+    	UPDATE user SET userPW = #{userPW} WHERE userID = #{userID} AND userEmail = #{userEmail}
+    </update>
+</mapper> 

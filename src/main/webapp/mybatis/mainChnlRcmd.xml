@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE mapper
+	PUBLIC "-//maybatis.org//DTD Mapper 3.0//EN"
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.col.main.dao.MainChnlDao">
+	<select id="selectFollowChnl" resultType="com.col.channel.dao.ChannelVO" >
+		SELECT ch.userID, ch.channelTitle, ch.channelCate, ch.channelNotice, ch.channelLevel, ch.channelSKey, ch.channelImg
+		FROM channel as ch INNER JOIN (
+			SELECT followChannel,count(*) as followCNT
+			from follow
+			GROUP BY followChannel
+			ORDER BY followCNT desc) as follow
+									  ON ch.userID = followChannel
+		ORDER BY follow.followCNT desc
+				 LIMIT 3
+	</select>
+	<select id="selectViewChnl" resultType="com.col.channel.dao.ChannelVO">
+		SELECT ch.userID, ch.channelTitle, ch.channelCate, ch.channelNotice, ch.channelLevel, ch.channelSKey, ch.channelImg
+		FROM channel as ch INNER JOIN (
+			SELECT userID,sum(videoView) as videoCNT
+			from video
+			GROUP BY userID
+			ORDER BY videoCNT desc) as video
+									  ON ch.userID = video.userID
+		ORDER BY video.videoCNT desc
+				 LIMIT 3
+	</select>
+	<select id="selectVideoChnl" resultType="com.col.channel.dao.ChannelVO">
+		SELECT ch.userID, ch.channelTitle, ch.channelCate, ch.channelNotice, ch.channelLevel, ch.channelSKey, ch.channelImg
+		FROM channel as ch INNER JOIN (
+			SELECT userID,count(*) as videoCNT
+			from video
+			GROUP BY userID
+			ORDER BY videoCNT desc) as video
+									  ON ch.userID = video.userID
+		ORDER BY video.videoCNT desc
+				 LIMIT 3
+	</select>
+	<select id="selectUNION" resultType="com.col.channel.dao.ChannelVO">
+		(SELECT ch.*
+		 FROM channel as ch INNER JOIN (
+			 SELECT followChannel,count(*) as followCNT
+			 from follow
+			 GROUP BY followChannel
+			 ORDER BY followCNT desc) as follow
+									   ON ch.userID = followChannel
+		 ORDER BY follow.followCNT desc
+				  LIMIT 3)
+		UNION
+		(SELECT ch.*
+		FROM channel as ch INNER JOIN (
+				SELECT userID,sum(videoView) as videoCNT
+				from video
+				GROUP BY userID
+				ORDER BY videoCNT desc) as video
+										ON ch.userID = video.userID
+		ORDER BY video.videoCNT desc
+  				LIMIT 3)
+		UNION
+		(SELECT ch.*
+		FROM channel as ch INNER JOIN
+		  (
+				SELECT userID,count(*) as videoCNT
+				from video
+				GROUP BY userID
+				ORDER BY videoCNT desc) as video
+										ON ch.userID = video.userID
+		ORDER BY video.videoCNT desc
+				 LIMIT 3)
+	</select>
+	<select id="selectChnl" resultType="com.col.channel.dao.ChannelVO">
+		SELECT *
+		FROM channel
+		ORDER BY userID desc
+				LIMIT 3
+	</select>
+	<select id="selectCmt" parameterType="String" resultType="com.col.main.dao.MainComVO">
+		SELECT comment.*, user.userImg
+		FROM (comment JOIN board ON board.boardSeq = comment.boardSeq) JOIN user ON user.userID = comment.userID
+		WHERE board.userID =#{userID}
+		ORDER BY comment.comNum DESC
+				 LIMIT 10
+	</select>
+</mapper>

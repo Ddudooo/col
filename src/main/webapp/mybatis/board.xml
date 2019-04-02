@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!DOCTYPE mapper
+        PUBLIC "-//maybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+    
+
+<mapper namespace="board">
+
+    <sql id="includeBoard">
+        WHERE boardCate=#{boardCate} AND boardDelFlag='N'
+        <if test="searchKeyword!=null and searchKeyword!='' and searchType!=''">
+            <foreach item="item" index="index" collection="searchTypeArr" separator=" OR " open="AND (" close=")">
+                ${item} LIKE CONCAT('%', #{searchKeyword},'%' )
+            </foreach>
+        </if>
+    </sql>
+
+
+    <!-- 게시판 페이징 -->
+    <select id="selectBoardPage" resultType="Integer" parameterType="com.col.board.dao.SearchVO">
+        SELECT COUNT(*)
+        FROM board
+
+        <include refid="includeBoard"/>
+    </select>
+
+
+    <!-- 글 목록 불러오기 -->
+    <select id="selectBoardList" resultType="com.col.board.dao.BoardVO" parameterType="com.col.board.dao.SearchVO">
+      SELECT boardCate, boardSeq, boardTitle, userID, boardContent, DATE_FORMAT(boardRegDate,'%Y-%m-%d') boardRegDate, boardCnt
+
+      FROM board
+
+      <include refid="includeBoard"/>
+
+      ORDER BY
+        boardSeq DESC
+        LIMIT ${rowStart-1}, 10
+    </select>
+
+
+    <!-- 글 작성 -->
+    <insert id="insertBoard" parameterType="com.col.board.dao.BoardVO">
+        INSERT INTO board (boardCate, boardTitle, userID, boardContent, boardRegDate)
+        VALUES (#{boardCate}, #{boardTitle}, #{userID}, #{boardContent}, NOW())
+    </insert>
+
+
+    <!-- 파일 저장 -->
+    <insert id="insertBoardFile" parameterType="com.col.board.dao.FileVO">
+        INSERT INTO boardfile(boardSeq, fileName, fileRealName, fileSize)
+        VALUES (#{boardSeq}, #{fileName}, #{fileRealName}, #{fileSize})
+    </insert>
+
+
+    <!-- 파일 삭제 -->
+    <delete id="deleteBoardFile" parameterType="hashmap">
+        DELETE
+        FROM boardfile
+        WHERE fileNum IN (
+          <foreach item="item" index="index" collection="fileNum" separator=",">
+              ${item}
+          </foreach>
+        )
+    </delete>
+
+
+    <select id="selectBoardFileList" resultType="com.col.board.dao.FileVO" parameterType="String">
+        SELECT fileNum, fileName, fileRealName, fileSize
+        FROM boardfile
+        WHERE boardSeq=#{boardSeq}
+        ORDER BY fileNum DESC
+    </select>
+
+
+    <!-- 글 읽기 -->
+    <select id="selectBoardOne" parameterType="String" resultType="com.col.board.dao.BoardVO">
+        SELECT boardCate, boardSeq, boardTitle, userID, boardContent, DATE_FORMAT(boardRegDate,'%Y-%m-%d') boardRegDate
+          FROM board
+         WHERE boardSeq = #{boardSeq}
+    </select>
+
+
+    <!-- 글 수정 -->
+    <update id="updateBoard" parameterType="com.col.board.dao.BoardVO">
+        UPDATE board
+        SET boardTitle = #{boardTitle},
+            boardContent = #{boardContent}
+        WHERE boardSeq = #{boardSeq} AND userID = #{userID}
+
+    </update>
+
+
+    <!-- 글 삭제 -->
+    <delete id="deleteBoard" parameterType="String">
+        DELETE
+        FROM board
+        WHERE boardSeq = #{boardSeq}
+    </delete>
+
+
+    <!-- 조회수 -->
+    <update id="updateBoardCnt" parameterType="String">
+        UPDATE board
+        SET boardCnt = boardCnt + 1
+        WHERE boardSeq = #{boardSeq}
+    </update>
+
+
+    <!-- 댓글 목록 -->
+    <select id="selectBoardReplyList" resultType="com.col.board.dao.BoardcomVO" parameterType="String">
+        SELECT boardSeq, comNum, userID, comDelFlag, comContent, comDate, comParent, comDepth, comOrder, comLikeCnt
+          FROM comment
+         WHERE boardSeq=#{boardSeq} AND comDelFlag='N'
+         ORDER BY comOrder
+    </select>
+
+
+    <!-- 댓글 작성 -->
+    <insert id="insertBoardReply" parameterType="com.col.board.dao.BoardcomVO" >
+        INSERT INTO comment (boardSeq, userID, comDelFlag, comContent, comDate, comOrder, comParent, comDepth)
+        VALUES (#{boardSeq}, #{userID}, 'N', #{comContent}, NOW(), #{comOrder},
+              <choose>
+                  <when test="comParent==null">#{comNum}, 0</when>
+                  <otherwise>#{comParent}, #{comDepth}</otherwise>
+              </choose>
+        )
+    </insert>
+
+    <!-- 댓글 삭제-->
+    <!--<update id="deleteBoardReply" parameterType="String">-->
+        <!--UPDATE comment-->
+           <!--SET comDelFlag='Y'-->
+         <!--WHERE comNum=#{comNum}-->
+    <!--</update>-->
+    <delete id="deleteBoardReply" parameterType="String">
+        DELETE
+          FROM comment
+         WHERE comNum=#{comNum}
+    </delete>
+
+    <select id="selectBoardReplyChild" resultType="Integer" parameterType="String">
+        SELECT COUNT(*)
+          FROM comment
+         WHERE comParent=#{comParent} AND comNum!=#{comNum}
+    </select>
+
+
+    <!-- 댓글 수정 -->
+    <update id="updateBoardReply" parameterType="com.col.board.dao.BoardcomVO">
+        UPDATE comment
+        SET comContent = #{comContent}
+        WHERE comNum=#{comNum}
+    </update>
+
+
+    <!-- 부모 댓글 -->
+    <select id="selectBoardReplyParent" resultType="com.col.board.dao.BoardcomVO" parameterType="String">
+        SELECT boardSeq, comDepth+1 comDepth, comOrder
+          FROM comment
+         WHERE comNum=#{comParent}
+    </select>
+
+
+    <select id="selectBoardReplyMaxOrder" resultType="Integer" parameterType="String">
+        SELECT IFNULL(MAX(comOrder),0)+1
+          FROM comment
+         WHERE boardSeq=#{boardSeq}
+    </select>
+
+
+    <update id="updateBoardReplyOrder" parameterType="com.col.board.dao.BoardcomVO">
+        UPDATE comment
+           SET comOrder = comOrder + 1
+         WHERE boardSeq=#{boardSeq} AND comOrder>#{comOrder}
+    </update>
+
+    <update id="updateBoardReplyOrderDelete" parameterType="com.col.board.dao.BoardcomVO">
+        UPDATE comment
+           SET comOrder = comOrder - 1
+         WHERE comNum = #{comNum}
+    </update>
+
+
+    <!-- 추천 -->
+    <select id="existLike" parameterType="HashMap" resultType="int">
+        SELECT COUNT(*)
+        FROM comlike
+        WHERE userID=#{userID} AND comNum=#{comNum} AND likeCheck=#{likeCheck}
+    </select>
+
+    <!-- 추천 -->
+    <insert id="insertLike">
+        INSERT INTO comlike(comNum, userID, likeCheck)
+        VALUES (#{comNum}, #{userID}, 1)
+    </insert>
+
+    <!-- 추천수 -->
+    <update id="updateLikeCnt" parameterType="String">
+        UPDATE comment
+           SET comLikeCnt = comLikeCnt + 1
+         WHERE comNum = #{comNum};
+    </update>
+
+    <!-- 추천 취소 -->
+    <update id="likeCntDown" parameterType="String">
+        UPDATE comment
+           SET comLikeCnt = comLikeCnt - 1
+         WHERE comNum = #{comNum};
+    </update>
+
+    <delete id="deleteLike" parameterType="String">
+        DELETE
+          FROM comlike
+         WHERE comNum = #{comNum};
+    </delete>
+</mapper>

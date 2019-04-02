@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper
+        PUBLIC "-//maybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+        
+
+<mapper namespace="com.col.channel.dao.DashBoardDao">
+	<insert id="insertChnlInfo" parameterType="com.col.channel.dao.ChannelVO" >
+		INSERT INTO channel
+		(
+			userID,
+			channelTitle,
+			channelNotice,
+			channelCate,
+			channelImg
+		)
+		VALUES
+		(
+			#{userID},
+			#{channelTitle},
+			#{channelNotice},
+			#{channelCate},
+			#{channelImg}
+		)
+	</insert>
+	
+	
+	<insert id="insertVideo" parameterType="com.col.channel.dao.VideoVO">
+		INSERT INTO video
+		(
+			userID,
+			videoTitle,
+			videoAddr,
+			videoPrice,
+			videoCate,
+			videoSize,
+			videoLevel,
+			videoRegDate
+			
+		)
+		VALUES
+		(
+			#{userID},
+			#{videoTitle},
+			#{videoAddr},
+			#{videoPrice},
+			#{videoCate},
+			#{videoSize},
+			#{videoLevel},
+			now()
+			
+		)
+	</insert>
+	
+
+	<select id="existChnl" parameterType="String" resultType="int">
+		SELECT COUNT(*)
+		FROM channel
+		WHERE userID=#{userID}
+	</select>
+	
+	<select id="selectVideoList" parameterType="String" resultType="com.col.channel.dao.VideoVO">
+		SELECT *
+		FROM video
+		WHERE userID=#{userID}
+	</select>
+	
+	<update id="updateChnlInfo" parameterType="com.col.channel.dao.ChannelVO">
+		UPDATE channel 
+		<set>
+			channelTitle = #{channelTitle}, 
+			channelNotice=#{channelNotice}, 
+			channelLevel=#{channelLevel},
+			channelCate=#{channelCate},
+			<if test="channelImg!=null">channelImg=#{channelImg}</if>
+		</set>
+		where userID= #{userID}
+	</update>
+	
+</mapper>
